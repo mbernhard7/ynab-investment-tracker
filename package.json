@@ -1,0 +1,24 @@
+{
+  "name": "ynab_investment_tracker",
+  "version": "1.0.0",
+  "description": "Node module to keep track of investments value in YNAB.",
+  "author": "Miles Bernhard <me@milesbernhard.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/mbernhard7/ynab-investment-tracker#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbernhard7/ynab-investment-tracker.git"
+  },
+  "main": "src/index.ts",
+  "scripts": {
+  },
+  "keywords": ["ynab"],
+  "dependencies": {
+    "yahoo-finance2": "^2.4.1",
+    "ynab": "^1.55.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.4",
+    "@types/node": "^20.3.1"
+  }
+}
