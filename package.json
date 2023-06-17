@@ -1,7 +1,7 @@
 {
-  "name": "ynab_investment_tracker",
+  "name": "ynab_investment_tracking",
   "version": "1.0.0",
-  "description": "Node module to keep track of investments value in YNAB.",
+  "description": "Node module to keep track of investments value in YNAB. You Need Investment Tracking.",
   "author": "Miles Bernhard <me@milesbernhard.com>",
   "license": "MIT",
   "homepage": "https://github.com/mbernhard7/ynab-investment-tracker#readme",
@@ -11,10 +11,17 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "bin": {
+    "run": "./bin/run"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "prepublish": "npm run build",
     "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

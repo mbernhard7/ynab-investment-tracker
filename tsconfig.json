@@ -1,9 +1,11 @@
 {
-    "extends": "@tsconfig/node16/tsconfig.json",
     "compilerOptions": {
-        "preserveConstEnums": true,
-        "downlevelIteration": true
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "target": "es6",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "dist"
     },
-    "include": ["src/**/*"],
-    "exclude": ["**/*.spec.ts"]
+    "lib": ["es2015"]
 }
