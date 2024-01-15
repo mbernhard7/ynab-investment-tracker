@@ -43,23 +43,25 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
     });
 
 
-    console.log(`[YNIT] Fetching quotes...`);
-    const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
-    console.log(`[YNIT] Fetched quotes.`);
+    if (Array.from(accountHoldings.keys()).length) {
+        console.log(`[YNIT] Fetching quotes...`);
+        const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
+        console.log(`[YNIT] Fetched quotes.`);
 
-    const bulkTransactions = buildUpdateTransactionsFromQuotesAndHoldings(account, quotes, accountHoldings)
+        const bulkTransactions = buildUpdateTransactionsFromQuotesAndHoldings(account, quotes, accountHoldings)
 
-    if (bulkTransactions.transactions.length ===0) {
-        console.log(`[YNIT] No updates needed.`);
-    } else {
-        console.log(`[YNIT] Updates:`);
-        bulkTransactions.transactions.forEach((tx) => {
-            console.log(`       [${tx.memo}] $${tx.amount/1000}`);
-        });
+        if (bulkTransactions.transactions.length ===0) {
+            console.log(`[YNIT] No updates needed.`);
+        } else {
+            console.log(`[YNIT] Updates:`);
+            bulkTransactions.transactions.forEach((tx) => {
+                console.log(`       [${tx.memo}] $${tx.amount/1000}`);
+            });
 
-        console.log(`[YNIT] Posting transactions to YNAB...`);
-        await ynabAPI.transactions.bulkCreateTransactions(budgetID, bulkTransactions);
-        console.log(`[YNIT] Posted transactions.`);
+            console.log(`[YNIT] Posting transactions to YNAB...`);
+            await ynabAPI.transactions.bulkCreateTransactions(budgetID, bulkTransactions);
+            console.log(`[YNIT] Posted transactions.`);
+        }
     }
 }
 
