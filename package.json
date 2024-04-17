@@ -27,7 +27,7 @@
     "ynab"
   ],
   "dependencies": {
-    "yahoo-finance2": "^2.4.1",
+    "yahoo-finance2": "file:src/modules/yahoo-finance-build",
     "ynab": "^1.55.0"
   },
   "devDependencies": {
