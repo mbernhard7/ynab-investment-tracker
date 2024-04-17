@@ -1,6 +1,6 @@
 {
   "name": "ynab_investment_tracking",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Node module to keep track of investments value in YNAB. You Need Investment Tracking.",
   "author": "Miles Bernhard <me@milesbernhard.com>",
   "license": "MIT",
@@ -27,7 +27,7 @@
     "ynab"
   ],
   "dependencies": {
-    "yahoo-finance2": "file:src/modules/yahoo-finance-build",
+    "yahoo-finance2": "file:dist/modules/yahoo-finance-build",
     "ynab": "^1.55.0"
   },
   "devDependencies": {
