@@ -82,7 +82,7 @@ const buildAccountHoldingsFromTransactions = ( data: TransactionsResponseData): 
             if (action.startsWith("BUY")) {
                 holding.count = holding.count + +action.split(" ")[1];
             }
-            if (t?.memo && t?.memo?.startsWith("SELL")) {
+            if (action.startsWith("SELL")) {
                 holding.count = holding.count - +action.split(" ")[1];
             }
             accountHoldings.set(ticker, holding);
