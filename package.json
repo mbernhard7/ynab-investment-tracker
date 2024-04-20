@@ -27,7 +27,7 @@
     "ynab"
   ],
   "dependencies": {
-    "yahoo-finance2": "github:Yhprum/yahoo-finance#a7d397c",
+    "yahoo-finance2": "^2.11.2",
     "ynab": "^1.55.0"
   },
   "devDependencies": {

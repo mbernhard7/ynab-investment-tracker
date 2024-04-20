@@ -1,7 +1,8 @@
 import {Account, API, BulkTransactions, SaveTransaction, TransactionsResponseData} from "ynab";
+import yahooFinance from 'yahoo-finance2';
 import ClearedEnum = SaveTransaction.ClearedEnum;
 import FlagColorEnum = SaveTransaction.FlagColorEnum;
-import quote from "yahoo-finance2/dist/esm/src/modules/quote";
+import { QuoteResponseMap} from "yahoo-finance2/dist/esm/src/modules/quote";
 
 type THoldings = Map<string, { count: number, value: number }>;
 
@@ -44,7 +45,7 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
 
     if (Array.from(accountHoldings.keys()).length) {
         console.log(`[YNIT] Fetching quotes...`);
-        const quotes = await quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
+        const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
         console.log(`[YNIT] Fetched quotes.`);
 
         const bulkTransactions = buildUpdateTransactionsFromQuotesAndHoldings(account, quotes, accountHoldings)
@@ -92,7 +93,7 @@ const buildAccountHoldingsFromTransactions = ( data: TransactionsResponseData): 
     return accountHoldings;
 }
 
-const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: any, holdings: THoldings): BulkTransactions => {
+const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: QuoteResponseMap, holdings: THoldings): BulkTransactions => {
     const bulkTransactions: BulkTransactions = {transactions: []};
     const currentDate = new Date();
     const offset = currentDate.getTimezoneOffset();
