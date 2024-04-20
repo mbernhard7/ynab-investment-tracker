@@ -47,6 +47,10 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
         console.log(`[YNIT] Fetching quotes...`);
         const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
         console.log(`[YNIT] Fetched quotes.`);
+        console.log(`[YNIT] Current prices:`);
+        [...quotes.keys()].forEach((key) => {
+            console.log(`       [${key}] Price: ${quotes.get(key).regularMarketPrice}`);
+        });
 
         const bulkTransactions = buildUpdateTransactionsFromQuotesAndHoldings(account, quotes, accountHoldings)
 
@@ -85,7 +89,10 @@ const buildAccountHoldingsFromTransactions = ( data: TransactionsResponseData): 
             if (action.startsWith("SELL")) {
                 holding.count = holding.count - +action.split(" ")[1];
             }
-            accountHoldings.set(ticker, holding);
+            if (holding.count !== 0) {
+                accountHoldings.set(ticker, holding);
+
+            }
         }
     });
 
