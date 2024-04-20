@@ -91,7 +91,8 @@ const buildAccountHoldingsFromTransactions = ( data: TransactionsResponseData): 
             }
             if (holding.count !== 0) {
                 accountHoldings.set(ticker, holding);
-
+            } else if (accountHoldings.has(ticker)) {
+                delete accountHoldings[ticker]
             }
         }
     });
