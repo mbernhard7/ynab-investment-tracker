@@ -45,7 +45,7 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
 
     if (Array.from(accountHoldings.keys()).length) {
         console.log(`[YNIT] Fetching quotes...`);
-        const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()), { fields: ["regularMarketPrice"], return: "map" });
+        const quotes: QuoteResponseMap = await yahooFinance.quote(Array.from(accountHoldings.keys()).filter(k => k !== "CASH"), { fields: ["regularMarketPrice"], return: "map" });
         console.log(`[YNIT] Fetched quotes.`);
         console.log(`[YNIT] Current prices:`);
         [...quotes.keys()].forEach((key) => {
@@ -94,6 +94,10 @@ const buildAccountHoldingsFromTransactions = ( data: TransactionsResponseData): 
             } else if (accountHoldings.has(ticker)) {
                 delete accountHoldings[ticker]
             }
+        } else {
+            const holding = accountHoldings.get("CASH") || {count: 0, value: 0};
+            holding.value = holding.value + (t.amount/1000);
+            accountHoldings.set("CASH", holding);
         }
     });
 
