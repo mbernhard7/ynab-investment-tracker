@@ -1,6 +1,6 @@
 {
   "name": "ynab_investment_tracking",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Node module to keep track of investments value in YNAB. You Need Investment Tracking.",
   "author": "Miles Bernhard <me@milesbernhard.com>",
   "license": "MIT",
@@ -12,7 +12,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "run": "./bin/run"
+    "run": "bin/run"
   },
   "files": [
     "dist"
@@ -27,8 +27,8 @@
     "ynab"
   ],
   "dependencies": {
-    "yahoo-finance2": "^2.11.2",
-    "ynab": "^1.55.0"
+    "yahoo-finance2": "^2.13.3",
+    "ynab": "^2.6.0"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.4",
