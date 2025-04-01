@@ -74,7 +74,9 @@ const buildUpdates = async (account: Account, accountHoldings: THoldings, quotes
     } else {
         console.log(`[YNIT] Updates for ${account.name}:`);
         bulkTransactions.transactions.forEach((tx) => {
-            console.log(`       [${tx.memo}] $${tx.amount / 1000}`);
+            tx.memo.split(",").forEach((item) => {
+                console.log(`       [${item.split("|")[0]}] $${Number(item.split("|")[1]) / 1000}`);
+            })
         });
     }
     return bulkTransactions
@@ -96,8 +98,26 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
     return accountHoldings
 }
 
+const isTransferOut = (t: { transfer_account_id?: string, amount: number }): boolean => t?.transfer_account_id && t.amount < 0
+
+const isStockUpdate = (t: { memo?: string }): boolean => t?.memo && t?.memo?.startsWith("$")
+
+const updateHoldingCount = (ticker: string, count: number, holdings: THoldings): THoldings => {
+    const holding = holdings.get(ticker) || {count: 0, value: 0};
+    holding.count = holding.count + count;
+    holdings.set(ticker, holding);
+    return holdings
+}
+
+const updateHoldingValue = (ticker: string, value: number, holdings: THoldings): THoldings => {
+    const holding = holdings.get(ticker) || {count: 0, value: 0};
+    holding.value = holding.value + value;
+    holdings.set(ticker, holding);
+    return holdings
+}
+
 const buildAccountHoldingsFromTransactions = (data: TransactionsResponseData): THoldings => {
-    const accountHoldings: THoldings = new Map();
+    let accountHoldings: THoldings = new Map();
 
     const transactions = data.transactions.map(t => {
         return {...t, date: Date.parse(t.date)};
@@ -106,63 +126,78 @@ const buildAccountHoldingsFromTransactions = (data: TransactionsResponseData): T
     console.log(`[YNIT] Processing transactions...`);
 
     transactions.forEach(t => {
-        if (t?.memo && t?.memo?.startsWith("$")) {
+        if (t.payee_name === "Bulk Investment Value Update") {
+            t?.memo.split(",").forEach((item) => {
+                const [ticker, amount] = item.replace("$", "").split("|")
+                accountHoldings = updateHoldingValue(ticker, Number(amount) / 1000, accountHoldings);
+            })
+        } else if (!isTransferOut(t) && isStockUpdate(t)) {
             const [ticker, action] = t.memo.replace("$", "").split("|")
             const holding = accountHoldings.get(ticker) || {count: 0, value: 0};
-            holding.value = holding.value + (t.amount / 1000);
+            accountHoldings = updateHoldingValue(ticker, t.amount / 1000, accountHoldings);
             if (action.startsWith("BUY")) {
                 holding.count = holding.count + +action.split(" ")[1];
+                if (!t?.transfer_account_id) {
+                    accountHoldings = updateHoldingCount("CASH", -t.amount / 1000, accountHoldings);
+                }
             }
             if (action.startsWith("SELL")) {
-                holding.count = holding.count - +action.split(" ")[1];
+                if (action.endsWith("ALL")) {
+                    holding.count = 0
+                } else {
+                    holding.count = holding.count - +action.split(" ")[1];
+                }
+                accountHoldings = updateHoldingCount("CASH", -t.amount / 1000, accountHoldings);
             }
-            if (holding.count !== 0) {
-                accountHoldings.set(ticker, holding);
-            } else if (accountHoldings.has(ticker)) {
-                delete accountHoldings[ticker]
-            }
+            accountHoldings.set(ticker, holding);
         } else {
-            const holding = accountHoldings.get("CASH") || {count: 0, value: 0};
-            holding.value = holding.value + (t.amount / 1000);
-            accountHoldings.set("CASH", holding);
+            accountHoldings = updateHoldingCount("CASH", (t.amount / 1000), accountHoldings);
+            accountHoldings = updateHoldingValue("CASH", (t.amount / 1000), accountHoldings);
         }
     });
-
     console.log(`[YNIT] Transactions processed.`);
     return accountHoldings;
 }
 
-const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: QuoteResponseArray, holdings: THoldings): BulkTransactions => {
-    const bulkTransactions: BulkTransactions = {transactions: []};
+const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: QuoteResponseArray, holdings: THoldings) => {
+    const groupedTransactions: BulkTransactions = {transactions: []};
     const currentDate = new Date();
     const offset = currentDate.getTimezoneOffset();
 
     holdings.forEach(({count, value}, ticker) => {
-        const quote = quotes.find(k => k.symbol === ticker);
+        const quote = ticker === "CASH" ? {regularMarketPrice: 1} : quotes.find(k => k.symbol === ticker);
         if (!quote?.regularMarketPrice) {
-            if (ticker !== "CASH") {
-                console.log(`[WARNING] Failed to get quote for: ${ticker}`);
-            }
+            console.log(`[WARNING] Failed to get quote for: ${ticker}`);
         } else {
-            const difference = (quote.regularMarketPrice * count) - value;
+            const difference = Math.round(((quote.regularMarketPrice * count) - value) * 1000)
 
-            if (Math.round(difference * 1000) !== 0) {
-
-                bulkTransactions.transactions.push({
-                    "account_id": account.id,
-                    "date": new Date(currentDate.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0],
-                    "amount": Math.round(difference * 1000),
-                    "payee_name": `Investment Value Update`,
-                    "memo": `$${ticker}|VALUE_UPDATE`,
-                    "cleared": TransactionClearedStatus.Cleared,
-                    "approved": true,
-                    "flag_color": TransactionFlagColor.Blue
-                });
+            if (difference !== 0) {
+                const memo = `$${ticker}|`
+                const last = groupedTransactions.transactions[groupedTransactions.transactions.length - 1]
+                if (!last || last.memo.length + memo.length + 1 >= 500) {
+                    const newTran = {
+                        "account_id": account.id,
+                        "date": new Date(currentDate.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0],
+                        "amount": difference,
+                        "payee_name": `Bulk Investment Value Update`,
+                        "memo": `$${ticker}|${difference}`,
+                        "cleared": TransactionClearedStatus.Cleared,
+                        "approved": true,
+                        "flag_color": TransactionFlagColor.Blue
+                    }
+                    groupedTransactions.transactions.push(newTran);
+                } else {
+                    const newTran = {
+                        ...last,
+                        amount: last.amount + difference,
+                        memo: `${last.memo},$${ticker}|${difference}`
+                    }
+                    groupedTransactions.transactions[groupedTransactions.transactions.length - 1] = newTran
+                }
             }
         }
-    });
-
-    return bulkTransactions;
+    })
+    return groupedTransactions
 }
 
 (async () => {
@@ -172,6 +207,5 @@ const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: 
         console.log(err);
         process.exit(1);
     }
-
     process.exit(0);
 })();
