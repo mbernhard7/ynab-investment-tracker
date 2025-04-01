@@ -133,8 +133,8 @@ const buildAccountHoldingsFromTransactions = (data: TransactionsResponseData): T
             })
         } else if (!isTransferOut(t) && isStockUpdate(t)) {
             const [ticker, action] = t.memo.replace("$", "").split("|")
-            const holding = accountHoldings.get(ticker) || {count: 0, value: 0};
             accountHoldings = updateHoldingValue(ticker, t.amount / 1000, accountHoldings);
+            const holding = accountHoldings.get(ticker) || {count: 0, value: 0};
             if (action.startsWith("BUY")) {
                 holding.count = holding.count + +action.split(" ")[1];
                 if (!t?.transfer_account_id) {
@@ -175,7 +175,7 @@ const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: 
                 const memo = `$${ticker}|`
                 const last = groupedTransactions.transactions[groupedTransactions.transactions.length - 1]
                 if (!last || last.memo.length + memo.length + 1 >= 500) {
-                    const newTran = {
+                    groupedTransactions.transactions.push({
                         "account_id": account.id,
                         "date": new Date(currentDate.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0],
                         "amount": difference,
@@ -184,15 +184,13 @@ const buildUpdateTransactionsFromQuotesAndHoldings = (account: Account, quotes: 
                         "cleared": TransactionClearedStatus.Cleared,
                         "approved": true,
                         "flag_color": TransactionFlagColor.Blue
-                    }
-                    groupedTransactions.transactions.push(newTran);
+                    });
                 } else {
-                    const newTran = {
+                    groupedTransactions.transactions[groupedTransactions.transactions.length - 1] = {
                         ...last,
                         amount: last.amount + difference,
                         memo: `${last.memo},$${ticker}|${difference}`
                     }
-                    groupedTransactions.transactions[groupedTransactions.transactions.length - 1] = newTran
                 }
             }
         }

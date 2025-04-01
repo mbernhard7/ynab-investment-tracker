@@ -1,6 +1,6 @@
 {
   "name": "ynab_investment_tracking",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Node module to keep track of investments value in YNAB. You Need Investment Tracking.",
   "author": "Miles Bernhard <me@milesbernhard.com>",
   "license": "MIT",
