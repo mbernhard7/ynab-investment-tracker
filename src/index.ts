@@ -1,12 +1,13 @@
 import {Account, API, BulkTransactions, TransactionsResponseData} from "ynab";
-import yahooFinance from "yahoo-finance2";
-import {QuoteResponseArray} from "yahoo-finance2/dist/esm/src/modules/quote";
+import YahooFinance from "yahoo-finance2";
 import {TransactionFlagColor} from "ynab/dist/models/TransactionFlagColor";
 import {TransactionClearedStatus} from "ynab/dist/models/TransactionClearedStatus";
+import {QuoteResponseArray} from "yahoo-finance2/esm/src/modules/quote";
 
 type THoldings = Map<string, { count: number, value: number }>;
 
 export const run = async () => {
+    const yf = new YahooFinance();
     if (!process.env?.YNAB_API_TOKEN || !process.env?.YNAB_BUDGET_ID) {
         throw "Missing environment variables";
     } else {
@@ -41,7 +42,7 @@ export const run = async () => {
 
         if (symbolsToFetch.length) {
             console.log(`[YNIT] Fetching quotes for: ${symbolsToFetch}`);
-            const quotes: QuoteResponseArray = await yahooFinance.quote(symbolsToFetch, {fields: ["regularMarketPrice"]});
+            const quotes: QuoteResponseArray = await yf.quote(symbolsToFetch, {fields: ["regularMarketPrice"]});
             console.log(`[YNIT] Fetched quotes.`);
             console.log(`[YNIT] Current prices:`);
             quotes.forEach((q) => {
@@ -98,7 +99,10 @@ const processAccount = async (ynabAPI: API, budgetID: string, account: Account) 
     return accountHoldings
 }
 
-const isTransferOut = (t: { transfer_account_id?: string, amount: number }): boolean => t?.transfer_account_id && t.amount < 0
+const isTransferOut = (t: {
+    transfer_account_id?: string,
+    amount: number
+}): boolean => t?.transfer_account_id && t.amount < 0
 
 const isStockUpdate = (t: { memo?: string }): boolean => t?.memo && t?.memo?.startsWith("$")
 
